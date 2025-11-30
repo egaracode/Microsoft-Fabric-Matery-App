@@ -6,9 +6,8 @@ Actuarás como "Fabric DevOps Expert" (MentorAI), un consultor senior y mentor e
 Tu rol también incluye ser el "Arquitecto de la Experiencia", definiendo la UI/UX de la aplicación final.
 Tu tono es profesional, técnico, didáctico y directo al punto.
 Todo el contenido generado y la interacción deben ser siempre en español.
-Prioriza la accesibilidad, la claridad y el diseño minimalista.
 HERRAMIENTAS DE REFERENCIA: Windows, Power BI, Microsoft Fabric, Azure DevOps, Azure, Visual Studio Code, Power Shell, Bloc de Notas y Excel.
-RESTRICCIÓN CRÍTICA: NO debes mostrar ni hacer referencia a URLs o webs verificadas. Usa referencias simuladas.
+RESTRICCIÓN DE FUENTES: No debes mostrar ni hacer referencia a URL/webs verificadas ni a la fuente de la que obtienes la información. Usa referencias simuladas.
 `;
 
 // Initialize Gemini Client
@@ -18,7 +17,7 @@ export const generateDiagnosisQuestions = async (): Promise<DiagnosisQuestion[]>
   const model = "gemini-2.5-flash";
   const prompt = `
     Genera 3 preguntas técnicas de selección múltiple para evaluar el nivel de experiencia de un usuario en el ecosistema Microsoft Fabric, Power BI y DevOps.
-    Las preguntas deben cubrir conceptos generales pero claves.
+    Las preguntas deben cubrir conceptos generales pero claves para clasificar en Principiante, Intermedio o Avanzado.
     Devuelve un JSON array de objetos con: id (number), question (string), options (array of strings).
   `;
 
@@ -160,29 +159,37 @@ export const generateCourse = async (variation: string, level: UserLevel): Promi
     Genera un curso técnico completo basado en la lección: "${variation}".
     Nivel del Usuario: ${level} (Ajusta el tecnicismo, profundidad y ejemplos de código acorde a este nivel).
     
-    RESTRICCIONES Y FORMATO DE SALIDA:
+    INSTRUCCIONES DE FORMATO OBLIGATORIAS:
 
-    #### 3.1. UX/UI METADATA
-    * NO uses URLs reales ni verificadas.
-    * Estructura Mobile-First.
+    1. METADATA HEADER (Debe ir al principio exacto del markdown):
+       [NIVEL ASIGNADO: ${level}]
+       > **[DECLARACIÓN DE METADATOS: El contenido a continuación incluye instrucciones de implementación (UX/UI METADATA, JSON/YAML, Recursos) destinadas al desarrollador de la App, y no son contenido didáctico directo de lectura para el usuario final.]**
 
-    #### 3.2. CONTENIDO FORMATIVO
-    * Divide el curso en 5 a 7 bloques temáticos (H2).
-    * H3 para subtemas.
-    * Usa ejemplos de código (PowerShell, JSON, YAML) donde aplique.
-    * AL INICIO de cada bloque, incluye un tag visual: [TAG DE DIAGRAMA: descripción técnica del diagrama].
-    * AL FINAL de cada bloque, incluye un indicador de progreso: [PROGRESS: XX] (Donde XX es el porcentaje acumulado, ej: 20, 40, 60...).
-    * GLOSARIO: Cuando uses términos técnicos complejos (ej: Lakehouse, Medallion), usa el formato [[Término|Definición corta]] para que sean clicables.
-    * RECURSOS SIMULADOS: Al final de cada bloque, antes del Quiz, añade una lista de recursos simulados con el formato: [RECURSO: Tipo | Título] (Ej: [RECURSO: Doc Oficial | Introducción a Pipelines]).
+    2. ESTRUCTURA:
+       - Divide el curso en 5 a 7 bloques temáticos (H2).
+       - Usa H3 para subtemas.
+       - Incluye ejemplos de código (PowerShell, JSON, YAML) en bloques de código.
+    
+    3. ELEMENTOS VISUALES Y METADATA:
+       - AL INICIO de cada bloque: [TAG DE DIAGRAMA: descripción técnica del diagrama]
+       - AL FINAL de cada bloque (Barra de progreso del tema): [PROGRESO: XX] (Donde XX es 20, 40, 60, 80, 100).
+       - GLOSARIO: Usa el formato [[Término|Definición corta]] para que sean clicables.
+    
+    4. RECURSOS SIMULADOS (Al final de cada bloque, antes del Quiz):
+       - Usa el formato: [RECURSO: Documentación Oficial | Título del tema] o [RECURSO: Artículo Técnico | Título del concepto].
+       - NO uses URLs.
 
-    #### 3.3. EVALUACIÓN Y REFUERZO
-    * Al final de cada bloque, añade el título "#### Evaluación del Módulo".
-    * Genera un bloque de código \`\`\`quiz con un JSON array de 3 objetos: { "question", "options", "correctAnswer" (index), "explanation" }.
+    5. EVALUACIÓN (Al final de cada bloque, Título: "#### Evaluación del Módulo"):
+       - Genera un bloque de código \`\`\`quiz con un JSON array de 5 objetos.
+       - Cada objeto debe tener:
+         - "question": string
+         - "options": array de 5 strings (5 opciones obligatorias)
+         - "correctAnswer": number (índice 0-4)
+         - "explanation": string (feedback de refuerzo explicando el por qué)
 
-    #### 3.4. CIERRE
-    * Al final del curso, añade una sección H2 "Desafío de Aplicación Práctica" con un ejercicio real.
-    * Finalmente, incluye EXACTAMENTE esta línea:
-      > **[BOTÓN: Volver a las 10 Variaciones de Lección anteriores]**
+    6. CIERRE DEL CURSO:
+       - Sección H2: "Desafío de Aplicación Práctica" (Propuesta de proyecto real).
+       - Línea final exacta: > **[BOTÓN: Volver a las 10 Variaciones de Lección anteriores]**
   `;
 
   try {
@@ -191,7 +198,7 @@ export const generateCourse = async (variation: string, level: UserLevel): Promi
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        // No tools (grounding disabled as per request)
+        // No tools needed
       },
     });
 

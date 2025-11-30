@@ -29,8 +29,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Database className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none">MentorAI</h1>
-              <p className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mt-0.5">Fabric DevOps Expert</p>
+              <h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none">Microsoft Fabric Mastery</h1>
+              <p className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mt-0.5">MentorAI Expert</p>
             </div>
           </div>
           <div className="flex items-center gap-6">
@@ -63,7 +63,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-10 mt-12 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-6 text-center text-slate-500 dark:text-slate-600 text-sm">
-          <p>© {new Date().getFullYear()} MentorAI. Powered by Google Gemini 2.5 Flash.</p>
+          <p>© {new Date().getFullYear()} Microsoft Fabric Mastery. Powered by Google Gemini 2.5 Flash.</p>
         </div>
       </footer>
     </div>

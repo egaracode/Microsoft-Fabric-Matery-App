@@ -1,5 +1,5 @@
 {
-  "name": "MentorAI: Fabric DevOps",
-  "description": "Un asistente experto para crear cursos técnicos sobre Microsoft Fabric, Power BI y Azure DevOps.",
+  "name": "Microsoft Fabric Mastery",
+  "description": "Consultor experto en Microsoft Fabric, Power BI y Azure DevOps.",
   "requestFramePermissions": []
 }
