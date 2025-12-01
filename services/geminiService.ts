@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
-import { CourseContent, DiagnosisQuestion, UserLevel } from "../types";
+import { CourseContent, DiagnosisQuestion, UserLevel, ChatMessage } from "../types";
 
 const SYSTEM_INSTRUCTION = `
 Actuarás como "Fabric DevOps Expert" (MentorAI), un consultor senior y mentor experto en la arquitectura de datos moderna de Microsoft Fabric, Power BI y la implementación de prácticas CI/CD (Azure DevOps, Visual Studio Code, PowerShell).
@@ -211,6 +212,47 @@ export const generateCourse = async (variation: string, level: UserLevel): Promi
     };
   } catch (error) {
     console.error("Error generating course:", error);
+    throw error;
+  }
+};
+
+export const getChatResponse = async (currentMessage: string, history: ChatMessage[]): Promise<string> => {
+  const model = "gemini-2.5-flash";
+  
+  // Format history for context
+  const historyText = history
+    .slice(-10) // Keep last 10 messages for context to save tokens
+    .map(msg => `${msg.role === 'user' ? 'Usuario' : 'MentorAI'}: ${msg.text}`)
+    .join('\n');
+
+  const prompt = `
+    HISTORIAL DE CONVERSACIÓN PREVIA (Q&A):
+    ${historyText}
+
+    PREGUNTA ACTUAL DEL USUARIO:
+    ${currentMessage}
+    
+    INSTRUCCIÓN:
+    Responde como "MentorAI" (Fabric DevOps Expert).
+    Tu respuesta debe ser técnica, precisa, didáctica y útil. 
+    Si la pregunta no tiene relación con Microsoft Fabric, Power BI, Azure o DevOps, indícalo amablemente.
+    Sé conciso pero completo.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+      },
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("No response from AI");
+    return text;
+  } catch (error) {
+    console.error("Error getting chat response:", error);
     throw error;
   }
 };

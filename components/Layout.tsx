@@ -1,11 +1,14 @@
+
 import React, { useEffect, useState } from 'react';
-import { Terminal, Database, Cloud, Sun, Moon } from 'lucide-react';
+import { Terminal, Database, Cloud, Sun, Moon, MessageSquare } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
+  onToggleQA?: () => void;
+  isQAOpen?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, onToggleQA, isQAOpen }) => {
   // Initialize dark mode based on system preference or default to true (as per requirement)
   const [isDark, setIsDark] = useState(true);
 
@@ -33,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <p className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mt-0.5">MentorAI Expert</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 md:gap-6">
              <div className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-500 dark:text-slate-500">
               <span className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 <Cloud className="w-3.5 h-3.5" />
@@ -44,6 +47,24 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 CI/CD Automation
               </span>
             </div>
+            
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
+
+            {/* Q&A Button */}
+            {onToggleQA && (
+              <button
+                onClick={onToggleQA}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  isQAOpen 
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Q&A</span>
+              </button>
+            )}
+
             <button 
               onClick={toggleTheme}
               className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -56,7 +77,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-8 md:py-12">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-8 md:py-12 relative">
         {children}
       </main>
 

@@ -1,3 +1,4 @@
+
 export enum AppStep {
   DIAGNOSIS = 'DIAGNOSIS',
   INPUT_TOPIC = 'INPUT_TOPIC',
@@ -17,6 +18,13 @@ export interface DiagnosisQuestion {
   id: number;
   question: string;
   options: string[];
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+  timestamp: Date;
 }
 
 export interface StepState {

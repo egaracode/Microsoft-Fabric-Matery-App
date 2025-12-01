@@ -1,9 +1,11 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import { AppStep, StepState, UserLevel } from './types';
+import { AppStep, StepState, UserLevel, ChatMessage } from './types';
 import { generateDiagnosisQuestions, evaluateUserLevel, generatePillars, generateVariations, generateCourse } from './services/geminiService';
 import Layout from './components/Layout';
 import CourseRenderer from './components/CourseRenderer';
-import { ArrowRight, Loader2, BookOpen, Layers, ChevronRight, Sparkles, BrainCircuit } from 'lucide-react';
+import QAChat from './components/QAChat';
+import { ArrowRight, Loader2, BookOpen, Layers, ChevronRight, Sparkles } from 'lucide-react';
 
 const INITIAL_STATE: StepState = {
   currentStep: AppStep.DIAGNOSIS,
@@ -23,6 +25,10 @@ export default function App() {
   const [state, setState] = useState<StepState>(INITIAL_STATE);
   const [inputText, setInputText] = useState('');
   
+  // Q&A State
+  const [isQAOpen, setIsQAOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
   // Diagnosis State
   const [diagnosisAnswers, setDiagnosisAnswers] = useState<Record<number, string>>({});
 
@@ -120,6 +126,8 @@ export default function App() {
   const goBackToVariations = useCallback(() => {
     setState(prev => ({ ...prev, currentStep: AppStep.SELECT_VARIATION, course: null }));
   }, []);
+
+  const toggleQA = () => setIsQAOpen(!isQAOpen);
 
   // --- Render Helpers ---
 
@@ -276,61 +284,72 @@ export default function App() {
   );
 
   return (
-    <Layout>
-      {state.error && (
-        <div className="bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-200 p-4 rounded-lg mb-8 flex items-center gap-3 animate-in fade-in">
-          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-          {state.error}
-        </div>
-      )}
+    <Layout onToggleQA={toggleQA} isQAOpen={isQAOpen}>
+      {/* Q&A Overlay */}
+      <QAChat 
+        isOpen={isQAOpen} 
+        onClose={() => setIsQAOpen(false)} 
+        messages={chatMessages}
+        setMessages={setChatMessages}
+      />
 
-      {state.isLoading ? (
-        renderLoading(
-          state.currentStep === AppStep.DIAGNOSIS ? "Analizando perfil y generando diagnóstico..." :
-          state.currentStep === AppStep.INPUT_TOPIC ? "Analizando arquitectura y generando pilares estratégicos..." :
-          state.currentStep === AppStep.SELECT_PILLAR ? "Diseñando variaciones de lección específicas..." :
-          "Consultando bases de conocimiento (sin salir a internet), estructurando curso y generando evaluaciones..."
-        )
-      ) : (
-        <>
-          {state.currentStep === AppStep.DIAGNOSIS && renderDiagnosis()}
+      {/* Main App Content - Hidden when Q&A is open to preserve state */}
+      <div className={isQAOpen ? 'hidden' : 'block'}>
+        {state.error && (
+          <div className="bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-200 p-4 rounded-lg mb-8 flex items-center gap-3 animate-in fade-in">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            {state.error}
+          </div>
+        )}
 
-          {state.currentStep === AppStep.INPUT_TOPIC && renderInputTopic()}
-          
-          {state.currentStep === AppStep.SELECT_PILLAR && renderListSelection(
-            "Pilares Estratégicos",
-            `Selecciona un área de enfoque para: ${state.topic}`,
-            state.pillars,
-            selectPillar,
-            <Layers className="w-5 h-5" />
-          )}
+        {state.isLoading ? (
+          renderLoading(
+            state.currentStep === AppStep.DIAGNOSIS ? "Analizando perfil y generando diagnóstico..." :
+            state.currentStep === AppStep.INPUT_TOPIC ? "Analizando arquitectura y generando pilares estratégicos..." :
+            state.currentStep === AppStep.SELECT_PILLAR ? "Diseñando variaciones de lección específicas..." :
+            "Consultando bases de conocimiento (sin salir a internet), estructurando curso y generando evaluaciones..."
+          )
+        ) : (
+          <>
+            {state.currentStep === AppStep.DIAGNOSIS && renderDiagnosis()}
 
-          {state.currentStep === AppStep.SELECT_VARIATION && renderListSelection(
-            "Variaciones de Lección",
-            `Profundiza en un escenario específico de: ${state.selectedPillar}`,
-            state.variations,
-            selectVariation,
-            <BookOpen className="w-5 h-5" />
-          )}
+            {state.currentStep === AppStep.INPUT_TOPIC && renderInputTopic()}
+            
+            {state.currentStep === AppStep.SELECT_PILLAR && renderListSelection(
+              "Pilares Estratégicos",
+              `Selecciona un área de enfoque para: ${state.topic}`,
+              state.pillars,
+              selectPillar,
+              <Layers className="w-5 h-5" />
+            )}
 
-          {state.currentStep === AppStep.COURSE_VIEW && state.course && (
-            <div className="animate-in fade-in duration-700">
-              <div className="mb-8 pb-8 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 mb-4 font-mono uppercase tracking-wider">
-                  <span className="opacity-50">Curso</span>
-                  <span className="opacity-30">/</span>
-                  <span className="font-semibold">{state.userLevel}</span>
-                  <span className="opacity-30">/</span>
-                  <span>{state.selectedPillar}</span>
+            {state.currentStep === AppStep.SELECT_VARIATION && renderListSelection(
+              "Variaciones de Lección",
+              `Profundiza en un escenario específico de: ${state.selectedPillar}`,
+              state.variations,
+              selectVariation,
+              <BookOpen className="w-5 h-5" />
+            )}
+
+            {state.currentStep === AppStep.COURSE_VIEW && state.course && (
+              <div className="animate-in fade-in duration-700">
+                <div className="mb-8 pb-8 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 mb-4 font-mono uppercase tracking-wider">
+                    <span className="opacity-50">Curso</span>
+                    <span className="opacity-30">/</span>
+                    <span className="font-semibold">{state.userLevel}</span>
+                    <span className="opacity-30">/</span>
+                    <span>{state.selectedPillar}</span>
+                  </div>
+                  <h1 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">{state.course.title}</h1>
                 </div>
-                <h1 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">{state.course.title}</h1>
+                
+                <CourseRenderer content={state.course.markdown} onBack={goBackToVariations} />
               </div>
-              
-              <CourseRenderer content={state.course.markdown} onBack={goBackToVariations} />
-            </div>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </Layout>
   );
 }
