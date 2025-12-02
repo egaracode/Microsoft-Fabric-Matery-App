@@ -67,6 +67,64 @@
       .animate-fade-in-up {
         animation: fadeInUp 0.5s ease-out forwards;
       }
+
+      /* Table Styles for Markdown */
+      .markdown-table-container {
+        overflow-x: auto;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
+        border-radius: 0.75rem;
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      }
+      .dark .markdown-table-container {
+        border-color: #1e293b; /* slate-800 */
+        background-color: #0f172a; /* slate-950 */
+      }
+      
+      table.custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem; /* text-sm */
+        text-align: left;
+      }
+      
+      table.custom-table th {
+        background-color: #f8fafc; /* slate-50 */
+        color: #0f172a; /* slate-900 */
+        font-weight: 700;
+        padding: 0.75rem 1rem;
+        border-bottom: 2px solid #e2e8f0; /* slate-200 */
+        white-space: nowrap;
+      }
+      .dark table.custom-table th {
+        background-color: #1e293b; /* slate-800 */
+        color: #f1f5f9; /* slate-100 */
+        border-bottom-color: #334155; /* slate-700 */
+      }
+
+      table.custom-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #e2e8f0; /* slate-200 */
+        color: #334155; /* slate-700 */
+        vertical-align: top;
+        line-height: 1.6;
+      }
+      .dark table.custom-table td {
+        border-bottom-color: #1e293b; /* slate-800 */
+        color: #cbd5e1; /* slate-300 */
+      }
+
+      table.custom-table tr:last-child td {
+        border-bottom: none;
+      }
+      
+      table.custom-table tr:nth-child(even) {
+        background-color: #fcfcfc;
+      }
+      .dark table.custom-table tr:nth-child(even) {
+        background-color: rgba(30, 41, 59, 0.3);
+      }
     </style>
   <script type="importmap">
 {
@@ -76,7 +134,8 @@
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "remark-gfm": "https://esm.sh/remark-gfm@4.0.0"
   }
 }
 </script>

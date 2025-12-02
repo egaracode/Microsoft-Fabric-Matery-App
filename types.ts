@@ -18,6 +18,7 @@ export interface DiagnosisQuestion {
   id: number;
   question: string;
   options: string[];
+  correctAnswer: number; // Index of the correct option (0-3)
 }
 
 export interface ChatMessage {
@@ -25,6 +26,19 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+}
+
+export interface HistoryLog {
+  id: string;
+  text: string;
+  timestamp: string; // ISO string for storage
+  source: 'COURSE' | 'QA';
+}
+
+export interface KnowledgeFile {
+  name: string;
+  mimeType: string;
+  data: string;
 }
 
 export interface StepState {
@@ -39,4 +53,5 @@ export interface StepState {
   isLoading: boolean;
   error: string | null;
   diagnosisQuestions: DiagnosisQuestion[];
+  knowledgeFiles: KnowledgeFile[];
 }

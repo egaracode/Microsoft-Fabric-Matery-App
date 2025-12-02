@@ -1,21 +1,33 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, X, Loader2, MessageSquare } from 'lucide-react';
-import { ChatMessage } from '../types';
+import { Send, Bot, User, X, Loader2, MessageSquare, Award } from 'lucide-react';
+import { ChatMessage, KnowledgeFile } from '../types';
 import { getChatResponse } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface QAChatProps {
   isOpen: boolean;
   onClose: () => void;
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  onNewMessage?: (text: string) => void;
+  inputDraft?: string;
+  knowledgeFiles?: KnowledgeFile[];
+  onAddPoints: (points: number) => void;
 }
 
-const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages }) => {
+const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages, onNewMessage, inputDraft, knowledgeFiles = [], onAddPoints }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load draft text when provided
+  useEffect(() => {
+    if (inputDraft) {
+      setInput(inputDraft);
+    }
+  }, [inputDraft]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -26,10 +38,17 @@ const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    const userText = input.trim();
+    
+    // Notify parent component for history logging
+    if (onNewMessage) {
+      onNewMessage(userText);
+    }
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      text: input,
+      text: userText,
       timestamp: new Date(),
     };
 
@@ -38,7 +57,7 @@ const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages 
     setIsLoading(true);
 
     try {
-      const responseText = await getChatResponse(input, messages);
+      const responseText = await getChatResponse(userText, messages, knowledgeFiles);
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
@@ -46,6 +65,7 @@ const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages 
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMsg]);
+      onAddPoints(10); // Award points for Q&A interaction
     } catch (error) {
       console.error("Chat Error", error);
       const errorMsg: ChatMessage = {
@@ -63,7 +83,7 @@ const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-50 dark:bg-slate-950 flex flex-col animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[90] bg-slate-50 dark:bg-slate-950 flex flex-col animate-in fade-in duration-300">
       {/* Header */}
       <header className="px-6 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
@@ -72,7 +92,12 @@ const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages 
           </div>
           <div>
             <h2 className="font-bold text-slate-900 dark:text-white leading-none">Q&A Fabric Expert</h2>
-            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Pregunta cualquier duda técnica</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-blue-600 dark:text-blue-400">Pregunta cualquier duda técnica</span>
+              <span className="flex items-center gap-0.5 text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-500 px-1.5 rounded-full font-bold">
+                 <Award className="w-3 h-3" /> +10 XP
+              </span>
+            </div>
           </div>
         </div>
         <button 
@@ -113,7 +138,18 @@ const QAChat: React.FC<QAChatProps> = ({ isOpen, onClose, messages, setMessages 
             }`}>
               {msg.role === 'model' ? (
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown>{msg.text}</ReactMarkdown>
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({ node, ...props }) => (
+                        <div className="markdown-table-container">
+                          <table className="custom-table" {...props} />
+                        </div>
+                      )
+                    }}
+                  >
+                    {msg.text}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.text}</p>

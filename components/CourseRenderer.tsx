@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Lightbulb, CheckCircle2, XCircle, ChevronRight, LayoutTemplate, ExternalLink, Trophy, BarChart3 } from 'lucide-react';
 
 interface CourseRendererProps {
   content: string;
   onBack: () => void;
+  onAddPoints: (points: number) => void;
 }
 
 interface QuizItem {
@@ -78,7 +81,7 @@ const SimulatedResource: React.FC<{ type: string; title: string }> = ({ type, ti
   </div>
 );
 
-const QuizBlock: React.FC<{ questions: QuizItem[] }> = ({ questions }) => {
+const QuizBlock: React.FC<{ questions: QuizItem[], onAddPoints: (points: number) => void }> = ({ questions, onAddPoints }) => {
   return (
     <div className="space-y-8 my-12 bg-slate-50 dark:bg-[#161f2e] p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-800">
       <div className="flex items-center gap-3 mb-6">
@@ -86,13 +89,13 @@ const QuizBlock: React.FC<{ questions: QuizItem[] }> = ({ questions }) => {
         <h3 className="text-xl font-bold text-slate-900 dark:text-white m-0">Evaluación de Conocimientos</h3>
       </div>
       {questions.map((q, idx) => (
-        <QuizQuestion key={idx} item={q} index={idx} />
+        <QuizQuestion key={idx} item={q} index={idx} onAddPoints={onAddPoints} />
       ))}
     </div>
   );
 };
 
-const QuizQuestion: React.FC<{ item: QuizItem; index: number }> = ({ item, index }) => {
+const QuizQuestion: React.FC<{ item: QuizItem; index: number; onAddPoints: (points: number) => void }> = ({ item, index, onAddPoints }) => {
   const [selected, setSelected] = useState<number | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [shake, setShake] = useState(false);
@@ -103,7 +106,7 @@ const QuizQuestion: React.FC<{ item: QuizItem; index: number }> = ({ item, index
   };
 
   const submit = () => {
-    if (selected === null) return;
+    if (selected === null || isSubmitted) return;
     setIsSubmitted(true);
     
     const isCorrect = selected === item.correctAnswer;
@@ -114,6 +117,7 @@ const QuizQuestion: React.FC<{ item: QuizItem; index: number }> = ({ item, index
       setTimeout(() => setShake(false), 500);
     } else {
       if (navigator.vibrate) navigator.vibrate(50);
+      onAddPoints(50); // Award points for correct answer
     }
   };
 
@@ -174,9 +178,17 @@ const QuizQuestion: React.FC<{ item: QuizItem; index: number }> = ({ item, index
                 <Lightbulb className="w-4 h-4" />
              </div>
              <div>
-                <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-blue-700 dark:text-blue-400'}`}>
-                  {isCorrect ? 'Explicación Correcta' : 'Refuerzo de Aprendizaje'}
-                </p>
+                <div className="flex justify-between items-center mb-2">
+                   <p className={`text-xs font-bold uppercase tracking-wider ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-blue-700 dark:text-blue-400'}`}>
+                     {isCorrect ? 'Explicación Correcta' : 'Refuerzo de Aprendizaje'}
+                   </p>
+                   {isCorrect && (
+                     <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                       <Trophy className="w-3 h-3" />
+                       +50 XP
+                     </span>
+                   )}
+                </div>
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                   {item.explanation}
                 </p>
@@ -188,7 +200,7 @@ const QuizQuestion: React.FC<{ item: QuizItem; index: number }> = ({ item, index
   );
 };
 
-const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack }) => {
+const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack, onAddPoints }) => {
   // Extract user level if present
   const levelMatch = content.match(/\[NIVEL ASIGNADO: (.*?)\]/);
   const userLevel = levelMatch ? levelMatch[1] : null;
@@ -209,7 +221,13 @@ const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack }) => {
       )}
 
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
+          table: ({ node, ...props }) => (
+            <div className="markdown-table-container">
+              <table className="custom-table" {...props} />
+            </div>
+          ),
           h2: ({ node, ...props }) => (
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mt-16 mb-8 pb-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 tracking-tight" {...props} />
           ),
@@ -242,8 +260,6 @@ const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack }) => {
             }
 
             // Handle Resource Tags
-            // Format 1: [RECURSO: Tipo | Título]
-            // Format 2: [Documentación Oficial: Título]
             if (text.trim().startsWith('[RECURSO:') || text.match(/^\[(Documentación Oficial|Artículo Técnico):/)) {
                let type = "Recurso";
                let title = text;
@@ -290,7 +306,7 @@ const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack }) => {
                );
             }
             
-            // Handle Glossary Terms: [[Term|Definition]] or [[Term]]
+            // Handle Glossary Terms
             const parts = text.split(/(\[\[[^\]]+\]\])/g);
             if (parts.length > 1) {
               return (
@@ -315,23 +331,21 @@ const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack }) => {
           ol: ({ node, ...props }) => (
             <ol className="list-decimal list-outside ml-6 space-y-2 text-slate-600 dark:text-slate-300 mb-8 marker:text-slate-400 dark:marker:text-slate-500" {...props} />
           ),
-          strong: ({ node, ...props }) => (
-            <strong className="text-slate-900 dark:text-white font-bold" {...props} />
-          ),
-          blockquote: ({ node, ...props }) => (
-            <blockquote className="border-l-4 border-blue-500/50 pl-6 py-2 my-8 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/20 italic rounded-r-lg" {...props} />
-          ),
           code: ({ node, className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || '');
+            const lang = match ? match[1] : '';
             const isInline = !match;
             
-            if (!isInline && match && match[1] === 'quiz') {
+            // Quiz block handling
+            if (!isInline && (lang === 'quiz' || lang === 'json')) {
               try {
-                const quizData = JSON.parse(String(children));
-                return <QuizBlock questions={quizData} />;
+                const content = String(children).trim();
+                if (content.startsWith('[') && content.includes('"correctAnswer"') && content.includes('"options"')) {
+                   const quizData = JSON.parse(content);
+                   return <QuizBlock questions={quizData} onAddPoints={onAddPoints} />;
+                }
               } catch (e) {
-                console.error("Quiz Parse Error", e);
-                return null;
+                // Ignore parse errors
               }
             }
 
@@ -347,7 +361,7 @@ const CourseRenderer: React.FC<CourseRendererProps> = ({ content, onBack }) => {
                       <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
                       <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-700"></div>
                    </div>
-                   <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">{match ? match[1] : 'script'}</span>
+                   <span className="text-xs font-mono text-slate-500 uppercase tracking-wider">{lang || 'text'}</span>
                 </div>
                 <div className="p-5 overflow-x-auto">
                   <code className={`${className} !bg-transparent text-sm font-mono leading-relaxed text-slate-800 dark:text-slate-200`} {...props}>

@@ -1,16 +1,27 @@
 
 import React, { useEffect, useState } from 'react';
-import { Terminal, Database, Cloud, Sun, Moon, MessageSquare } from 'lucide-react';
+import { Terminal, Database, Cloud, Sun, Moon, MessageSquare, History, ChevronLeft, Award } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
   onToggleQA?: () => void;
   isQAOpen?: boolean;
+  onToggleHistory?: () => void;
+  isHistoryOpen?: boolean;
+  onBack?: () => void; // New prop for navigation
+  score?: number; // New prop for gamification
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onToggleQA, isQAOpen }) => {
+const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  onToggleQA, isQAOpen, 
+  onToggleHistory, isHistoryOpen, 
+  onBack,
+  score = 0
+}) => {
   // Initialize dark mode based on system preference or default to true (as per requirement)
   const [isDark, setIsDark] = useState(true);
+  const [animateScore, setAnimateScore] = useState(false);
 
   useEffect(() => {
     if (isDark) {
@@ -20,6 +31,12 @@ const Layout: React.FC<LayoutProps> = ({ children, onToggleQA, isQAOpen }) => {
     }
   }, [isDark]);
 
+  useEffect(() => {
+    setAnimateScore(true);
+    const timer = setTimeout(() => setAnimateScore(false), 1000);
+    return () => clearTimeout(timer);
+  }, [score]);
+
   const toggleTheme = () => setIsDark(!isDark);
 
   return (
@@ -28,27 +45,61 @@ const Layout: React.FC<LayoutProps> = ({ children, onToggleQA, isQAOpen }) => {
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-900/20">
-              <Database className="w-5 h-5 text-white" />
-            </div>
+            {onBack ? (
+              <button 
+                onClick={onBack}
+                className="mr-1 p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
+                aria-label="Volver atrás"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            ) : (
+              <div className="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-900/20">
+                <Database className="w-5 h-5 text-white" />
+              </div>
+            )}
+            
             <div>
-              <h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none">Microsoft Fabric Mastery</h1>
+              <h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none hidden md:block">Microsoft Fabric Mastery</h1>
+              <h1 className="font-bold text-lg tracking-tight text-slate-900 dark:text-white leading-none md:hidden">Fabric Mastery</h1>
               <p className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold mt-0.5">MentorAI Expert</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 md:gap-6">
-             <div className="hidden md:flex items-center gap-6 text-xs font-medium text-slate-500 dark:text-slate-500">
+          <div className="flex items-center gap-2 md:gap-3">
+             
+             {/* Gamification Score Badge */}
+             <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 font-bold text-xs transition-transform duration-300 ${animateScore ? 'scale-110' : 'scale-100'}`}>
+                <Award className="w-4 h-4" />
+                <span>{score} XP</span>
+             </div>
+
+             <div className="hidden lg:flex items-center gap-6 text-xs font-medium text-slate-500 dark:text-slate-500 mr-2 ml-2">
               <span className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 <Cloud className="w-3.5 h-3.5" />
-                Azure Ecosystem
+                Azure
               </span>
               <span className="flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 <Terminal className="w-3.5 h-3.5" />
-                CI/CD Automation
+                CI/CD
               </span>
             </div>
             
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden md:block"></div>
+
+            {/* History Button */}
+            {onToggleHistory && (
+               <button
+                onClick={onToggleHistory}
+                className={`p-2 rounded-full transition-colors ${
+                  isHistoryOpen
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+                title="Historial de Inputs"
+               >
+                 <History className="w-4 h-4" />
+               </button>
+            )}
 
             {/* Q&A Button */}
             {onToggleQA && (
